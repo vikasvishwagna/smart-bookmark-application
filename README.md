@@ -1,109 +1,145 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# Smart Bookmark App
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+A full-stack Bookmark Manager built with **Next.js 14**, **Supabase**, and **Tailwind CSS**.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## 🚀 Live Demo
+
+https://smart-bookmark-application-three.vercel.app/
+
+---
 
 ## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+- **Authentication**: Secure Google OAuth sign-in via Supabase Auth.
+- **Real-time Updates**: Bookmarks sync instantly across all devices and tabs using Supabase Realtime.
+- **UI/UX**: tailwindcss and responsive design.
+- **Security**: Row Level Security (RLS) ensures users only access their own data.
+-**Pvivacy**: Bookmarks are private to each other
+-**Routes**: Protected routes
 
-## Demo
+## Tech Stack
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+- **Framework**: Next.js 
+- **Language**: TypeScript
+- **Database**: Supabase (Database + Auth + Realtime)
+- **Styling**: Tailwind CSS 
+- **Deployment**: Vercel
 
-## Deploy to Vercel
+## Setup & Installation
 
-Vercel deployment will guide you through creating a Supabase account and project.
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/vikasvishwagna/smart-bookmark-application
+    cd bookmarks-app
+    ```
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+2.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
+ 
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+3.  **Environment Variables**:
+    Create a `.env.local` file:
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+    ```
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+4.  ## 🗄 Database Schema
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+The application uses a `bookmarks` table in Supabase with Row Level Security (RLS) enabled to ensure users can only access their own data.
 
-## Clone and run locally
+### 📌 Table Structure
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+- `id` – Unique identifier (UUID)
+- `user_id` – References authenticated user (`auth.users`)
+- `title` – Bookmark title
+- `url` – Bookmark URL
+- `created_at` – Timestamp of creation
 
-2. Create a Next.js app using the Supabase Starter template npx command
+---
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+### 🔐 Row Level Security (RLS)
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+RLS policies ensure:
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+- Users can only view their own bookmarks
+- Users can only insert bookmarks linked to their account
+- Users can only delete their own bookmarks
 
-3. Use `cd` to change into the app's directory
+---
 
-   ```bash
-   cd with-supabase-app
-   ```
+### 🛠 SQL Setup
 
-4. Rename `.env.example` to `.env.local` and update the following:
+Run the following SQL inside the **Supabase SQL Editor**:
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+```sql
+create table bookmarks (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users not null,
+  title text not null,
+  url text not null,
+  created_at timestamptz default now()
+);
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+alter table bookmarks enable row level security;
 
-5. You can now run the Next.js local development server:
+create policy "Users can see their own bookmarks"
+  on bookmarks for select using (auth.uid() = user_id);
 
-   ```bash
-   npm run dev
-   ```
+create policy "Users can insert their own bookmarks"
+  on bookmarks for insert with check (auth.uid() = user_id);
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+create policy "Users can delete their own bookmarks"
+  on bookmarks for delete using (auth.uid() = user_id);
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+alter publication supabase_realtime add table bookmarks;
+```
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+5.  **Run Locally**:
+    ```bash
+    npm run dev
+    ```
 
-## Feedback and issues
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+## 🧩 Challenges Faced & Solutions
 
-## More Supabase examples
+### 1️⃣ Real-time Duplicate Bookmarks
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+**Problem:**  
+When adding a bookmark in one tab, it appeared twice in the same tab but correctly once in other tabs.
+
+**Cause:**  
+The bookmark was being added manually to local state after insertion, and the Supabase Realtime listener was also adding the same bookmark when it detected the database change.
+
+**Solution:**  
+Removed the manual state update and relied fully on Supabase Realtime for INSERT events.  
+Additionally, added a deduplication check to prevent duplicate entries.
+
+---
+
+### 2️⃣ TypeScript State Type Errors
+
+**Problem:**  
+Type mismatch errors when updating state using functional updates.
+
+**Solution:**  
+Ensured strict typing using the `Bookmark` interface and returned properly typed arrays in state setters.
+
+
+## 📚 Key Learning
+
+This project helped deepen understanding of:
+
+- Supabase Realtime architecture
+- Multi-tab synchronization
+- Optimistic UI updates
+- Debugging TypeScript and React key issues
+
+## 👤 Author
+
+**K.V.SAI VIKAS**
+
+- GitHub: https://github.com/vikasvishwagna
+- Email: vishwagnavikassai@gmail.com
