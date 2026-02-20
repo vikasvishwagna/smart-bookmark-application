@@ -24,19 +24,22 @@ export default function ProtectedPageComponent() {
     else setBookmarks(data || [])
   }
 
-  // Add bookmark
+  // Add bookmark (do NOT update state manually; rely on real-time)
   const handleAddBookmark = async (title: string, url: string) => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) return console.error("No user logged in")
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) return console.error("No user logged in");
 
-    const { data, error } = await supabase
-      .from("bookmarks")
-      .insert({ title, url, user_id: user.id })
-      .select()
+    const { error } = await supabase.from("bookmarks").insert({
+      title,
+      url,
+      user_id: user.id,
+    });
 
-    if (error) return console.error("Error adding bookmark:", error.message)
-    setBookmarks([...(data || []), ...bookmarks])
-  }
+    if (error) console.error("Error adding bookmark:", error.message);
+  };
 
   // Delete bookmark
   const handleDeleteBookmark = async (id: string) => {
@@ -45,20 +48,47 @@ export default function ProtectedPageComponent() {
     else setBookmarks(bookmarks.filter(b => b.id !== id))
   }
 
-  useEffect(() => {
-    fetchBookmarks()
+useEffect(() => {
+  let isMounted = true
+  const setup = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
 
+    const currentUserId = user.id
+
+    // initial fetch
+    if (isMounted) await fetchBookmarks()
+
+    // subscribe
     const subscription = supabase
-      .channel("public:bookmarks")
+      .channel(`public:bookmarks:user=${currentUserId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "bookmarks" },
-        () => fetchBookmarks()
+        {
+          event: "*",
+          schema: "public",
+          table: "bookmarks",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setBookmarks((prev) => [payload.new as Bookmark, ...prev])
+          } else if (payload.eventType === "DELETE") {
+            setBookmarks((prev) => prev.filter(b => b.id !== payload.old.id))
+          }
+        }
       )
       .subscribe()
+  }
 
-    return () => supabase.removeChannel(subscription)
-  }, [])
+  setup() // call async function
+
+  // synchronous cleanup
+  return () => {
+    isMounted = false
+    supabase.removeAllChannels()
+  }
+}, [])
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-10 ">
