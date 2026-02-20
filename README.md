@@ -43,7 +43,7 @@ https://smart-bookmark-application-three.vercel.app/
     Create a `.env.local` file:
     ```env
     NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
     ```
 
 4.  ## 🗄 Database Schema
