@@ -12,7 +12,7 @@ export default function ProtectedPageComponent() {
   // Fetch bookmarks for current user
   const fetchBookmarks = async () => {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) return console.error("No user logged in")
+    if (userError || !user) return
 
     const { data, error } = await supabase
       .from("bookmarks")
@@ -20,78 +20,91 @@ export default function ProtectedPageComponent() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
 
-    if (error) console.error("Error fetching bookmarks:", error.message)
+    if (error) console.error(error)
     else setBookmarks(data || [])
   }
 
-  // Add bookmark (do NOT update state manually; rely on real-time)
+  // Add bookmark 
   const handleAddBookmark = async (title: string, url: string) => {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) return console.error("No user logged in");
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (!user || userError) return
 
     const { error } = await supabase.from("bookmarks").insert({
       title,
       url,
-      user_id: user.id,
-    });
+      user_id: user.id
+    })
+    if (error) console.error(error)
+  }
 
-    if (error) console.error("Error adding bookmark:", error.message);
-  };
-
-  // Delete bookmark
+  // Delete bookmark 
   const handleDeleteBookmark = async (id: string) => {
     const { error } = await supabase.from("bookmarks").delete().eq("id", id)
-    if (error) console.error("Error deleting bookmark:", error.message)
-    else setBookmarks(bookmarks.filter(b => b.id !== id))
+    if (error) console.error(error)
+    else setBookmarks(prev => prev.filter(b => b.id !== id)) // optional
   }
 
-useEffect(() => {
-  let isMounted = true
-  const setup = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  useEffect(() => {
+    let isMounted = true
+    const setupRealtime = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const userId = user.id
 
-    const currentUserId = user.id
+      if (isMounted) await fetchBookmarks()
 
-    // initial fetch
-    if (isMounted) await fetchBookmarks()
-
-    // subscribe
-    const subscription = supabase
-      .channel(`public:bookmarks:user=${currentUserId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "bookmarks",
-          filter: `user_id=eq.${currentUserId}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setBookmarks((prev) => [payload.new as Bookmark, ...prev])
-          } else if (payload.eventType === "DELETE") {
-            setBookmarks((prev) => prev.filter(b => b.id !== payload.old.id))
+      // Subscribe to INSERT
+      const insertSub = supabase
+        .channel(`bookmarks-insert-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "bookmarks",
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            const newBookmark = payload.new as Bookmark
+            setBookmarks(prev => {
+              if (prev.some(b => b.id === newBookmark.id)) return prev
+              return [newBookmark, ...prev]
+            })
           }
-        }
-      )
-      .subscribe()
-  }
+        )
+        .subscribe()
 
-  setup() // call async function
+      // Subscribe to DELETE
+      const deleteSub = supabase
+        .channel(`bookmarks-delete-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "bookmarks",
+            filter: `user_id=eq.${userId}`
+          },
+          (payload) => {
+            const deletedId = (payload.old as Bookmark)?.id
+            if (!deletedId) return
+            setBookmarks(prev => prev.filter(b => b.id !== deletedId))
+          }
+        )
+        .subscribe()
+    }
 
-  // synchronous cleanup
-  return () => {
-    isMounted = false
-    supabase.removeAllChannels()
-  }
-}, [])
+    setupRealtime()
+
+    return () => {
+      isMounted = false
+        supabase.removeAllChannels()
+      
+    }
+  }, [])
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-10 ">
+    <div className="w-full max-w-2xl mx-auto space-y-10">
       <h1 className="text-4xl font-bold text-center">Bookmark Manager</h1>
       <BookmarkForm onAddBookmark={handleAddBookmark} />
       <BookmarkList bookmarks={bookmarks} onDelete={handleDeleteBookmark} />
